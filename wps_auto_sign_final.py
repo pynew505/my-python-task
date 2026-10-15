@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
 WPS自动签到脚本 - 最终版（使用JS点击）
+适配 GitHub Actions 环境
 """
 
-import time``
+import time
 import logging
 import os
 import sys
+import subprocess
 from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -50,12 +52,36 @@ def setup_driver():
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--disable-gpu')
-    options.add_argument('--remote-debugging-port=9222')
     options.add_argument('--window-size=1920,1080')
     options.add_argument('--disable-blink-features=AutomationControlled')
     
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option('useAutomationExtension', False)
+    
+    # GitHub Actions 环境：尝试多个 Chrome 路径
+    chrome_paths = [
+        '/usr/bin/chromium-browser',
+        '/usr/bin/google-chrome',
+        '/usr/bin/google-chrome-stable',
+        '/snap/bin/chromium',
+    ]
+    
+    for path in chrome_paths:
+        if os.path.exists(path):
+            options.binary_location = path
+            logger.info(f"找到 Chrome/Chromium: {path}")
+            break
+    else:
+        logger.warning("未找到预定义路径的Chrome，尝试自动发现...")
+        for cmd in ['chromium-browser', 'google-chrome', 'chromium']:
+            try:
+                result = subprocess.run(['which', cmd], capture_output=True, text=True)
+                if result.returncode == 0:
+                    options.binary_location = result.stdout.strip()
+                    logger.info(f"自动发现 Chrome: {options.binary_location}")
+                    break
+            except:
+                pass
     
     try:
         driver = webdriver.Chrome(options=options)
@@ -101,7 +127,7 @@ def find_all_buttons(driver):
         for i, btn in enumerate(buttons):
             text = btn.text.strip()
             disabled_attr = btn.get_attribute('disabled')
-            html = btn.get_attribute('outerHTML')[:100]  # 前100个字符
+            html = btn.get_attribute('outerHTML')[:100]
             logger.info(f"按钮{i+1}: 文本='{text}', disabled属性={disabled_attr}")
             logger.debug(f"按钮{i+1} HTML: {html}")
         
@@ -115,19 +141,15 @@ def click_with_js(driver, button):
     try:
         logger.info("使用JavaScript点击按钮...")
         
-        # 点击前截图
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        driver.save_screenshot(f'{log_dir}/js_before_click_{timestamp}.png')
+        driver.save_screenshot(f'{log_dir}js_before_click_{timestamp}.png')
         
-        # 使用JavaScript点击
         driver.execute_script("arguments[0].click();", button)
-        logger.info("✅ JavaScript点击执行完成")
+        logger.info("JavaScript点击执行完成")
         
-        # 等待响应
         time.sleep(3)
         
-        # 点击后截图
-        driver.save_screenshot(f'{log_dir}/js_after_click_{timestamp}.png')
+        driver.save_screenshot(f'{log_dir}js_after_click_{timestamp}.png')
         
         return True
     except Exception as e:
@@ -137,37 +159,31 @@ def click_with_js(driver, button):
 def check_and_click_sign_button(driver):
     """检查按钮状态并点击"""
     try:
-        # 查找所有按钮
         buttons = find_all_buttons(driver)
         if not buttons:
-            logger.error("❌ 未找到任何签到按钮")
+            logger.error("未找到任何签到按钮")
             return False
         
-        # 分析按钮状态
         for i, button in enumerate(buttons):
             text = button.text.strip()
             
-            # 如果已经签到
             if "已签到" in text:
-                logger.info("✅ 今天已经签到过了")
+                logger.info("今天已经签到过了")
                 return True
             
-            # 如果是签到按钮（无论disabled状态）
             if "点击签到" in text or "签到" in text:
                 logger.info(f"找到签到按钮（按钮{i+1}），尝试点击...")
                 
-                # 先尝试正常点击
                 try:
                     logger.info("尝试正常点击...")
                     button.click()
-                    logger.info("✅ 正常点击成功")
+                    logger.info("正常点击成功")
                     time.sleep(3)
                     return True
                 except Exception as e:
                     logger.warning(f"正常点击失败: {e}")
                     logger.info("尝试JavaScript点击...")
                     
-                    # 如果正常点击失败，使用JavaScript点击
                     if click_with_js(driver, button):
                         return True
         
@@ -180,48 +196,51 @@ def check_and_click_sign_button(driver):
 
 def main():
     """主函数"""
-    logger.info("="*50)
+    logger.info("=" * 50)
     logger.info(f"WPS自动签到开始 @ {datetime.now()}")
-    logger.info("="*50)
+    logger.info("=" * 50)
     
     driver = None
     try:
-        # 1. 启动浏览器
         logger.info("步骤1: 启动无头Chrome浏览器...")
         driver = setup_driver()
         
-        # 2. 注入Cookie并访问页面
         logger.info("步骤2: 注入Cookie并访问签到页面...")
         if not add_cookies_to_driver(driver, SIGN_PAGE_URL):
             logger.error("Cookie注入失败，终止")
             return False
         
-        # 3. 检查并点击签到按钮
         logger.info("步骤3: 检查签到按钮状态...")
         success = check_and_click_sign_button(driver)
         
         if success:
-            logger.info("🎉 自动签到流程执行成功！")
+            logger.info("自动签到流程执行成功！")
         else:
-            logger.warning("⚠️ 签到流程执行中遇到问题")
+            logger.warning("签到流程执行中遇到问题")
         
         return success
         
     except WebDriverException as e:
-        logger.error(f"🚨 浏览器驱动异常: {e}")
+        logger.error(f"浏览器驱动异常: {e}")
         return False
     except Exception as e:
-        logger.error(f"🚨 发生未捕获异常: {e}")
+        logger.error(f"发生未捕获异常: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         return False
     finally:
         if driver:
             driver.quit()
             logger.info("浏览器已关闭")
         logger.info(f"任务结束 @ {datetime.now()}")
-        logger.info("="*50)
+        logger.info("=" * 50)
 
 if __name__ == '__main__':
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    # GitHub Actions 兼容：不强制切换目录
+    try:
+        os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    except Exception as e:
+        logger.warning(f"切换工作目录失败（忽略）: {e}")
     
     exit_code = 0 if main() else 1
     sys.exit(exit_code)
