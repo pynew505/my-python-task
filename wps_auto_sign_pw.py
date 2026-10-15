@@ -15,10 +15,10 @@ SIGN_PAGE_URL = (
 )
 
 MY_COOKIES = [
-    {"name": "wps_sid", "value": "V02SFed0s7WtDm0WVequlHGF0-bNwgY00aeaae94000db7b8cb", "domain": ".wps.cn"},
-    {"name": "kso_sid", "value": "TKS-f0fbcN8k009AGVvA0poTTKS7fKoAKQKSrx5D4rKjz7oWTRvxemB7fe0odC5uO7ZDN7oqA9UwOfI937SA6SruKoff4lem2KnG9OJhs6WadDiXSrkwR86mYzp9s2IFJQr0S7STqN9xsJqZ-8ESz1osGRxFBj6AFGTq0zeHgTgjLT2_v_aKCvLj5KuIKcIKWrIIKQ.0xLU-o9KM3rjif6fFmScQTOmgQgOxAflpunYVUtcWWLXn77n9t8m4fa1iagj51GptGdlEie3h_3Zqm-a7yJmpQ", "domain": ".wps.cn"},
-    {"name": "uid", "value": "230144203", "domain": ".wps.cn"},
-    {"name": "csrf", "value": "4knSpBFitRz6CTCJywkQ6A38Jz6x5Ww2", "domain": ".wps.cn"},
+    {"name": "wps_sid", "value": "V02SFed0s7WtDm0WVequlHGF0-bNwgY00aeaae94000db7b8cb", "domain": ".wps.cn", "path": "/"},
+    {"name": "kso_sid", "value": "TKS-f0fbcN8k009AGVvA0poTTKS7fKoAKQKSrx5D4rKjz7oWTRvxemB7fe0odC5uO7ZDN7oqA9UwOfI937SA6SruKoff4lem2KnG9OJhs6WadDiXSrkwR86mYzp9s2IFJQr0S7STqN9xsJqZ-8ESz1osGRxFBj6AFGTq0zeHgTgjLT2_v_aKCvLj5KuIKcIKWrIIKQ.0xLU-o9KM3rjif6fFmScQTOmgQgOxAflpunYVUtcWWLXn77n9t8m4fa1iagj51GptGdlEie3h_3Zqm-a7yJmpQ", "domain": ".wps.cn", "path": "/"},
+    {"name": "uid", "value": "230144203", "domain": ".wps.cn", "path": "/"},
+    {"name": "csrf", "value": "4knSpBFitRz6CTCJywkQ6A38Jz6x5Ww2", "domain": ".wps.cn", "path": "/"},
 ]
 
 def main():
